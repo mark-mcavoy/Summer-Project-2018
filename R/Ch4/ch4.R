@@ -6,6 +6,7 @@
 # ch4_replication
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+# sink("log-file-ch4.txt) # uncomment if want to create a log file [of output]
 # install.packages("tidyverse") # run this the first time (only need to once)
 library(tidyverse) # includes ggplot2 and many more useful libraries
 
@@ -23,17 +24,16 @@ std_str <- sd(caschool$str)
 avg_tsc <- mean(caschool$testscr)
 std_tsc <- sd(caschool$testscr)
 
-quantile_str <- as.matrix(quantile(caschool$str, c(seq(0.05:1, by = 0.05)))) # quantile finds values in str based by percentages from 5-100%
-quantile_str2 <- as.tibble(quantile(caschool$str, c(seq(0.05:1, by = 0.05)))) 
-names(quantile_str2) <- "str"
+quantile_str <- as.tibble(quantile(caschool$str, c(seq(0.05:1, by = 0.05)))) # quantile finds values in str based by percentages from 5-100%
+names(quantile_str) <- "str"
 
-quantile_tsc <- as.matrix(quantile(caschool$testscr, c(seq(0.05:1, by = 0.05))))
-quantile_tsc2 <- as.tibble(quantile(caschool$testscr, c(seq(0.05:1, by = 0.05)))) # if tibble then need install tidyverse
-names(quantile_tsc2) <- "tsc"
+quantile_tsc <- as.tibble(quantile(caschool$testscr, c(seq(0.05:1, by = 0.05)))) # if tibble then need install tidyverse
+names(quantile_tsc) <- "tsc"
 
-
-table_4.1 <- cbind(quantile_str2, quantile_tsc2)
-# bind together same as in book
+percentiles <- c("10%", "25%", "40%", "50%", "60%", "75%", "90%") # choose only the percentiles listed in the book
+table_4.1 <- as.tibble(cbind(rbind(avg_str,avg_tsc), rbind(std_str,std_tsc), t(cbind(quantile_str, quantile_tsc)[percentiles,]))) # bring all together
+names(table_4.1) <- c("Average", "Standard Deviation", percentiles)
+table_4.1
 
 # ========================================================
 #                                               Figure 4.2
@@ -41,9 +41,10 @@ table_4.1 <- cbind(quantile_str2, quantile_tsc2)
 
 fig_4.2 <- ggplot(caschool, aes(x = str, y = testscr)) + 
            geom_point() +
-           labs(x = "Student-teacher ratio", y = "Test score")
+           labs(x = "Student-teacher ratio", y = "Test score") + 
+           xlim(xmin = 10, xmax = 30) + ylim(ymin=600, ymax = 720)
 fig_4.2
-# scale same to as in book
+
 
 cor(caschool$testscr, caschool$str)
 
@@ -51,12 +52,11 @@ cor(caschool$testscr, caschool$str)
 #                                            Equation 4.11
 # ........................................................
 
-# regression are: lm(y ~ x)
+# regression are: lm(y ~ x) 
 m <- lm(caschool$testscr ~ caschool$str)
-
+names(m$coefficients) <- c("(Intercept)", "str")
 summary(m) # plain std errors
-# rename variable just str
-# save as log file so can copy paste 
+ 
 
 # ========================================================
 #                                               Figure 4.3
@@ -66,7 +66,9 @@ summary(m) # plain std errors
 predict_tsc <- predict(m)
 
 fig_4.3 <- fig_4.2 +
-  geom_line(aes(y=predict_tsc))
+  geom_line(aes(y=predict_tsc), color = "blue", size = 1.5) +
+  stat_smooth(method = "lm", fullrange = TRUE, size = 1.5, level=0) +
+  xlim(xmin = 10, xmax = 30) + ylim(ymin=600, ymax = 720)
 fig_4.3
 # format same size book
 
@@ -131,6 +133,5 @@ plot_4.1_e <- plot_4.1_a +
               geom_line(aes(y = predict_4.1_c), colour = "blue") +
               geom_line(aes(y = predict_4.1_d), colour = "green")
 plot_4.1_e
-
-
+# sink()
 
